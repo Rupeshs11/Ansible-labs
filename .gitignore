@@ -1,0 +1,34 @@
+# SSH keys and credentials
+*.pem
+*.key
+*.pub
+id_rsa
+id_ed25519
+
+# Ansible
+*.retry
+inventory/*.cfg
+!hostfile/configuration.txt
+
+# Vault
+*vault*.yml
+.vault_pass
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backups
+backups/
+*.bak
+*.tmp
+
+# Logs
+*.log
