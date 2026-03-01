@@ -1,0 +1,36 @@
+# User & SSH key management
+- name: User Management
+  hosts: servers
+  become: yes
+  vars:
+    users:
+      - name: deploy
+        groups: sudo
+        shell: /bin/bash
+        ssh_key: "public-key"
+
+  tasks:
+    - name: Create user accounts
+      user:
+        name: "{{ item.name }}"
+        groups: "{{ item.groups }}"
+        shell: "{{ item.shell }}"
+        create_home: yes
+        state: present
+      loop: "{{ users }}"
+
+    - name: Deploy SSH keys
+      authorized_key:
+        user: "{{ item.name }}"
+        key: "{{ item.ssh_key }}"
+        state: present
+      loop: "{{ users }}"
+
+    - name: Add sudo access (no password)
+      lineinfile:
+        path: /etc/sudoers.d/{{ item.name }}
+        line: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL"
+        create: yes
+        validate: "visudo -cf %s"
+      loop: "{{ users }}"
+      when: item.groups == "sudo"

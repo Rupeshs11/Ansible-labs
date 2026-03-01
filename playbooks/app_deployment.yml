@@ -1,0 +1,52 @@
+# Deploy app from git: clone, build, restart service
+- name: Deploy Application from Git
+  hosts: prds
+  become: yes
+  vars:
+    app_repo: "https://github.com/your-username/your-app.git"
+    app_branch: "main"
+    app_dir: "/opt/myapp"
+    app_service: "myapp"
+
+  tasks:
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: "0755"
+
+    - name: Clone/update repo
+      git:
+        repo: "{{ app_repo }}"
+        dest: "{{ app_dir }}"
+        version: "{{ app_branch }}"
+        force: yes
+      notify: Restart App
+
+    - name: Install dependencies
+      command: npm install --production
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Build app
+      command: npm run build
+      args:
+        chdir: "{{ app_dir }}"
+      ignore_errors: yes
+
+    - name: Enable service
+      service:
+        name: "{{ app_service }}"
+        enabled: yes
+
+  handlers:
+    - name: Restart App
+      service:
+        name: "{{ app_service }}"
+        state: restarted

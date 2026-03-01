@@ -1,0 +1,47 @@
+# Backup server configs and fetch to control node
+- name: Backup Server Configurations
+  hosts: servers
+  become: yes
+  vars:
+    backup_dirs:
+      - /etc/nginx
+      - /etc/ssh
+      - /var/www/html
+    backup_dest: "/tmp/backups"
+    retention_days: 7
+
+  tasks:
+    - name: Create backup directory
+      file:
+        path: "{{ backup_dest }}"
+        state: directory
+        mode: "0755"
+
+    - name: Archive config directories
+      archive:
+        path: "{{ item }}"
+        dest: "{{ backup_dest }}/{{ item | basename }}-{{ ansible_date_time.date }}.tar.gz"
+        format: gz
+      loop: "{{ backup_dirs }}"
+      ignore_errors: yes
+
+    - name: Fetch backups to local machine
+      fetch:
+        src: "{{ backup_dest }}/{{ item | basename }}-{{ ansible_date_time.date }}.tar.gz"
+        dest: "./backups/"
+        flat: no
+      loop: "{{ backup_dirs }}"
+      ignore_errors: yes
+
+    - name: Find old backups
+      find:
+        paths: "{{ backup_dest }}"
+        age: "{{ retention_days }}d"
+      register: old_files
+
+    - name: Remove old backups
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_files.files }}"
+      when: old_files.files | length > 0

@@ -1,0 +1,77 @@
+# System security: UFW firewall, SSH hardening, Fail2Ban
+- name: Basic System Security Hardening
+  hosts: servers
+  become: yes
+  vars:
+    allowed_ports:
+      - { port: 22, proto: tcp }
+      - { port: 80, proto: tcp }
+      - { port: 443, proto: tcp }
+
+  tasks:
+    # Firewall
+    - name: Install UFW
+      apt:
+        name: ufw
+        state: present
+
+    - name: Deny incoming by default
+      ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Allow outgoing by default
+      ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Allow required ports
+      ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop: "{{ allowed_ports }}"
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+
+    # SSH hardening
+    - name: Disable root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PermitRootLogin"
+        line: "PermitRootLogin no"
+      notify: Restart SSH
+
+    - name: Disable password auth
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication"
+        line: "PasswordAuthentication no"
+      notify: Restart SSH
+
+    - name: Set idle timeout (5 min)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^ClientAliveInterval"
+        line: "ClientAliveInterval 300"
+      notify: Restart SSH
+
+    # Fail2Ban
+    - name: Install Fail2Ban
+      apt:
+        name: fail2ban
+        state: present
+
+    - name: Start Fail2Ban
+      service:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: sshd
+        state: restarted

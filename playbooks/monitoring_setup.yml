@@ -1,0 +1,69 @@
+# Install Node Exporter for Prometheus monitoring
+- name: Install Node Exporter
+  hosts: servers
+  become: yes
+  vars:
+    node_exporter_version: "1.7.0"
+    node_exporter_port: 9100
+
+  tasks:
+    - name: Create service user
+      user:
+        name: node_exporter
+        shell: /usr/sbin/nologin
+        system: yes
+        create_home: no
+
+    - name: Download Node Exporter
+      get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
+        dest: /tmp/node_exporter.tar.gz
+
+    - name: Extract archive
+      unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Copy binary
+      copy:
+        src: "/tmp/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+        dest: /usr/local/bin/node_exporter
+        mode: "0755"
+        owner: node_exporter
+        remote_src: yes
+
+    - name: Create systemd service
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network-online.target
+
+          [Service]
+          User=node_exporter
+          ExecStart=/usr/local/bin/node_exporter --web.listen-address=:{{ node_exporter_port }}
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+      notify:
+        - Reload systemd
+        - Restart Node Exporter
+
+    - name: Start Node Exporter
+      service:
+        name: node_exporter
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Restart Node Exporter
+      service:
+        name: node_exporter
+        state: restarted
