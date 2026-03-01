@@ -70,7 +70,7 @@ Ready-to-customize blueprints for common DevOps tasks:
 | ---------------------------------------------------------- | ------------------------------------------ |
 | [`user_management.yml`](./playbooks/user_management.yml)   | Create users, deploy SSH keys, manage sudo |
 | [`install_docker.yml`](./playbooks/install_docker.yml)     | Install Docker & Docker Compose            |
-| [`system_hardening.yml`](./playbooks/system_hardening.yml) | Firewall, SSH hardening, Fail2Ban          |
+| [`system_hardening.yml`](./playbooks/system_configure.yml) | Firewall, SSH hardening, Fail2Ban          |
 | [`app_deployment.yml`](./playbooks/app_deployment.yml)     | Clone repo, build, deploy, restart service |
 | [`backup_config.yml`](./playbooks/backup_config.yml)       | Archive & backup server configs            |
 | [`monitoring_setup.yml`](./playbooks/monitoring_setup.yml) | Node Exporter for Prometheus monitoring    |
